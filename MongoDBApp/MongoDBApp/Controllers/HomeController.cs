@@ -2,7 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using System.Web.Configuration;
 using System.Web.Mvc;
+using MongoDB.Driver;
+using MongoDBApp.Models;
 
 namespace MongoDBApp.Controllers
 {
@@ -10,7 +13,16 @@ namespace MongoDBApp.Controllers
     {
         public ActionResult Index()
         {
-            ViewBag.Message = "Modify this template to jump-start your ASP.NET MVC application.";
+            ViewBag.Message = "All the users in the mongoDB";
+
+            MongoServer server = new MongoClient(WebConfigurationManager.ConnectionStrings["MongoDBConnectionString"].ConnectionString).GetServer();
+            MongoDatabase database = server.GetDatabase(MongoUrl.Create(WebConfigurationManager.ConnectionStrings["MongoDBConnectionString"].ConnectionString).DatabaseName);
+
+            MongoCollection itemCollection = database.GetCollection<User>(typeof(Models.User).Name);
+
+           List<User> users=  itemCollection.FindAllAs<User>().ToList();
+
+           ViewBag.Users = users;
 
             return View();
         }
@@ -28,5 +40,6 @@ namespace MongoDBApp.Controllers
 
             return View();
         }
+
     }
 }

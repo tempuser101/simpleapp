@@ -10,11 +10,13 @@ using Microsoft.Web.WebPages.OAuth;
 using WebMatrix.WebData;
 using MongoDBApp.Filters;
 using MongoDBApp.Models;
+using MongoDB.Driver;
+using System.Configuration;
+using System.Web.Configuration;
 
 namespace MongoDBApp.Controllers
 {
     [Authorize]
-    [InitializeSimpleMembership]
     public class AccountController : Controller
     {
         //
@@ -79,14 +81,24 @@ namespace MongoDBApp.Controllers
                 // Attempt to register the user
                 try
                 {
-                    WebSecurity.CreateUserAndAccount(model.UserName, model.Password);
-                    WebSecurity.Login(model.UserName, model.Password);
-                    return RedirectToAction("Index", "Home");
+                    MongoServer server = new MongoClient(WebConfigurationManager.ConnectionStrings["MongoDBConnectionString"].ConnectionString).GetServer();
+                    MongoDatabase database = server.GetDatabase(MongoUrl.Create(WebConfigurationManager.ConnectionStrings["MongoDBConnectionString"].ConnectionString).DatabaseName);
+
+                    MongoCollection itemCollection = database.GetCollection<User>(typeof(Models.User).Name);
+
+                    itemCollection.Insert(new User
+                    {
+                        Name = model.UserName,
+                        Password = model.Password,
+                        Age = model.Age
+                    });
                 }
                 catch (MembershipCreateUserException e)
                 {
                     ModelState.AddModelError("", ErrorCodeToString(e.StatusCode));
                 }
+
+                return RedirectToAction("Index", "Home");
             }
 
             // If we got this far, something failed, redisplay form
